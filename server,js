@@ -1,0 +1,36 @@
+const express = require('express');
+const Pusher = require('pusher');
+const app = express();
+app.use(express.json());
+
+const pusher = new Pusher({
+    appId: '2021937',
+    key: '9cfc398f5cb11d78ddec',
+    secret: '23c309cc6cf63465df86',
+    cluster: 'us2',
+    useTLS: true
+});
+
+let playerCount = 0;
+
+app.post('/register', (req, res) => {
+    playerCount++;
+    let playerId = playerCount === 1 ? 'player1' : 'player2';
+    pusher.trigger('cvc-game-channel', 'player-joined', { playerCount });
+    res.json({ playerId, playerCount });
+});
+
+app.post('/move', (req, res) => {
+    pusher.trigger('cvc-game-channel', 'move', req.body);
+    res.json({ status: 'success' });
+});
+
+app.post('/game-over', (req, res) => {
+    pusher.trigger('cvc-game-channel', 'game-over', req.body);
+    playerCount = 0; // Reset for new game
+    res.json({ status: 'success' });
+});
+
+app.listen(process.env.PORT || 3000, () => {
+    console.log('Server running');
+});
